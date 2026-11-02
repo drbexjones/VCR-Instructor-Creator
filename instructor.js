@@ -29,3 +29,40 @@ $('facultyForm').addEventListener('submit',e=>{e.preventDefault();try{const a=fr
 $('copyLink').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('shareLink').value);$('linkWarning').textContent='Link copied. Test it before distributing.';}catch(e){$('shareLink').select();$('linkWarning').textContent='Select and copy the link manually.';}});
 $('downloadAssignment').addEventListener('click',()=>{try{const a=fromForm();download(slug(a.title)+'-assignment.json',JSON.stringify({format:'vcr-workspace-assignment',version:1,assignment:a},null,2),'application/json');}catch(e){alert(e.message);}});
 $('facultyPreview').addEventListener('click',()=>{try{window.open(getLink(fromForm()),'_blank','noopener,noreferrer');}catch(e){alert(e.message);}});
+
+
+// Optional AI scenario prompt: copies instructions only; no external AI call.
+function makeScenarioPrompt(){
+  const objective=$('objective').value.trim() || '[INSERT LEARNING OBJECTIVE]';
+  const topic=$('aiTopic').value.trim() || '[INSERT CLINICAL TOPIC]';
+  const level=$('aiLevel').value;
+  const prior=$('aiPrior').value.trim() || '[OPTIONAL: CONCEPTS ALREADY TAUGHT]';
+  return `Create a realistic, one-paragraph clinical scenario (75–150 words) for a graduate speech-language pathology learning assignment using Visible Clinical Reasoning (VCR), an instructional design framework developed by Rebecca L. Jones, EdD, CCC-SLP. VCR supports learning; it is not a competency assessment.
+
+Clinical topic: ${topic}
+Learning objective: ${objective}
+Learner readiness: ${level}
+Relevant concepts already taught: ${prior}
+
+Scenario requirements:
+1. Present a realistic clinical situation aligned with the learning objective. Include enough case-specific information to investigate and justify a defensible clinical decision (COMMIT).
+2. Include a meaningful challenge, conflicting detail, or plausible competing approach that invites reconsideration (COMPLICATE). The challenge may instead be introduced in a separate assignment prompt.
+3. Leave consequential information unknown so students can identify what they need to investigate (CALIBRATE). Students may also identify a gap in their own clinical knowledge.
+4. Match the learner's readiness, avoid unnecessary details and artificial dilemmas, and do not require an unsafe recommendation.
+5. Do not invent citations, research findings, or guidelines.
+
+Output only the clinical scenario paragraph, followed by a separate brief INSTRUCTOR-ONLY verification note identifying any clinical details requiring review. Do not generate student CCC instructions or an answer key. The instructor will verify and edit the scenario before use.`;
+}
+$('copyScenarioPrompt').addEventListener('click', async () => {
+  const prompt=makeScenarioPrompt();
+  const status=$('scenarioPromptStatus');
+  try {
+    await navigator.clipboard.writeText(prompt);
+    status.textContent='Prompt copied. Paste it into your preferred AI tool, then review and paste the resulting clinical paragraph into the Clinical Scenario box above.';
+  } catch(err) {
+    status.textContent='Automatic copying was blocked. Select and copy the prompt in the box below.';
+    let box=$('scenarioPromptFallback');
+    if(!box){box=document.createElement('textarea');box.id='scenarioPromptFallback';box.rows=9;box.readOnly=true;status.after(box);}
+    box.value=prompt;box.focus();box.select();
+  }
+});
